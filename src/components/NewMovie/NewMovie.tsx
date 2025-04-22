@@ -1,55 +1,56 @@
-import { useState } from 'react';
+import { useState, FormEvent, useCallback } from 'react';
 import { TextField } from '../TextField';
 import { Movie } from '../../types/Movie';
 
-type Props = {
+interface NewMovieProps {
   onAdd: (newMovie: Movie) => void;
+}
+
+const EMPTY_FORM = {
+  title: '',
+  description: '',
+  imgUrl: '',
+  imdbUrl: '',
+  imdbId: '',
 };
 
-export const NewMovie: React.FC<Props> = ({ onAdd }) => {
-  // Increase the count after successful form submission
-  // to reset touched status of all the `Field`s
-  const [count, setCount] = useState(0);
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    imgUrl: '',
-    imdbUrl: '',
-    imdbId: '',
-  });
+export const NewMovie: React.FC<NewMovieProps> = ({ onAdd }) => {
+  const [formResetKey, setFormResetKey] = useState(0);
+  const [formData, setFormData] = useState({ ...EMPTY_FORM });
 
-  const isInputFormValid =
-    formData.title && formData.imgUrl && formData.imdbUrl && formData.imdbId;
+  const requiredFields = ['title', 'imgUrl', 'imdbUrl', 'imdbId'];
 
-  const handleChange = (name: string, value: string) => {
-    setFormData(prevData => ({ ...prevData, [name]: value }));
-  };
+  const isFormValid = requiredFields.every(
+    field => !!formData[field as keyof typeof formData],
+  );
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleFieldChange = useCallback((fieldName: string, value: string) => {
+    setFormData(prevData => ({
+      ...prevData,
+      [fieldName]: value,
+    }));
+  }, []);
+
+  const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
 
-    if (isInputFormValid) {
+    if (isFormValid) {
       onAdd({ ...formData });
-      setFormData({
-        title: '',
-        description: '',
-        imgUrl: '',
-        imdbUrl: '',
-        imdbId: '',
-      });
-      setCount(count + 1);
+
+      setFormData({ ...EMPTY_FORM });
+      setFormResetKey(prev => prev + 1);
     }
   };
 
   return (
-    <form className="NewMovie" key={count} onSubmit={handleSubmit}>
+    <form className="NewMovie" key={formResetKey} onSubmit={handleSubmit}>
       <h2 className="title">Add a movie</h2>
 
       <TextField
         name="title"
         label="Title"
         value={formData.title}
-        onChange={value => handleChange('title', value)}
+        onChange={value => handleFieldChange('title', value)}
         required
       />
 
@@ -57,30 +58,30 @@ export const NewMovie: React.FC<Props> = ({ onAdd }) => {
         name="description"
         label="Description"
         value={formData.description}
-        onChange={value => handleChange('description', value)}
+        onChange={value => handleFieldChange('description', value)}
       />
 
       <TextField
         name="imgUrl"
         label="Image URL"
         value={formData.imgUrl}
-        onChange={value => handleChange('imgUrl', value)}
+        onChange={value => handleFieldChange('imgUrl', value)}
         required
       />
 
       <TextField
         name="imdbUrl"
-        label="Imdb URL"
+        label="IMDB URL"
         value={formData.imdbUrl}
-        onChange={value => handleChange('imdbUrl', value)}
+        onChange={value => handleFieldChange('imdbUrl', value)}
         required
       />
 
       <TextField
         name="imdbId"
-        label="Imdb ID"
+        label="IMDB ID"
         value={formData.imdbId}
-        onChange={value => handleChange('imdbId', value)}
+        onChange={value => handleFieldChange('imdbId', value)}
         required
       />
 
@@ -90,7 +91,7 @@ export const NewMovie: React.FC<Props> = ({ onAdd }) => {
             type="submit"
             data-cy="submit-button"
             className="button is-link"
-            disabled={!isInputFormValid}
+            disabled={!isFormValid}
           >
             Add
           </button>
